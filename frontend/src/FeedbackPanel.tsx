@@ -103,65 +103,99 @@ export default function FeedbackPanel({ trace, currentSlide, totalSlides, onDown
   };
   
   return (
-    <VStack gap={6} align="stretch">
+    <VStack gap={6} align="stretch" p={2}>
       {/* Download Button */}
       {trace.pptx_base64 && (
         <Button
-          colorScheme="cyan"
+          colorScheme="brand"
           size="lg"
-          shadow="lg"
+          shadow="premium"
           borderRadius="xl"
-          _hover={{ shadow: "xl", transform: "translateY(-2px)" }}
+          fontWeight="600"
+          _hover={{ shadow: "elevated", transform: "translateY(-2px)" }}
+          transition="all 0.2s"
           onClick={onDownload}
         >
           <HiDownload style={{ marginRight: '8px' }} />
-          Download PPTX Artifact
+          Download Artifact
         </Button>
       )}
       
-      {/* Trace Feedback */}
-      <Box>
-        <Heading size="sm" mb={3} color="gray.700">💬 Trace Feedback</Heading>
+      {/* Trace Feedback Section */}
+      <Box
+        p={5}
+        bg="slate.50"
+        borderRadius="xl"
+        borderWidth="1px"
+        borderColor="slate.200"
+      >
+        <Heading size="sm" mb={3} color="slate.900" fontWeight="700">
+          Trace Feedback
+        </Heading>
         <Textarea
-          placeholder="Overall feedback about this trace..."
+          placeholder="Share your thoughts on this trace..."
           value={traceFeedback}
           onChange={(e) => setTraceFeedback(e.target.value)}
           rows={4}
-          borderColor="blue.200"
-          _hover={{ borderColor: "blue.300" }}
-          _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px var(--chakra-colors-blue-500)" }}
+          borderColor="slate.300"
+          borderRadius="lg"
+          _hover={{ borderColor: "brand.400" }}
+          _focus={{ 
+            borderColor: "brand.500", 
+            boxShadow: "0 0 0 1px var(--chakra-colors-brand-500)",
+            bg: "white"
+          }}
+          bg="white"
         />
         <Button
-          mt={2}
-          colorScheme="blue"
-          size="sm"
+          mt={3}
+          colorScheme="brand"
+          size="md"
           w="full"
+          fontWeight="600"
+          borderRadius="lg"
           onClick={submitTraceFeedback}
           loading={submitting}
           disabled={!traceFeedback.trim()}
         >
-          Submit Trace Feedback
+          Submit Feedback
         </Button>
       </Box>
       
       {/* Slide-Specific Feedback */}
       {totalSlides > 0 && (
-        <Box>
-          <Heading size="sm" mb={3} color="gray.700">📝 Slide {currentSlide} Feedback</Heading>
+        <Box
+          p={5}
+          bg="slate.50"
+          borderRadius="xl"
+          borderWidth="1px"
+          borderColor="slate.200"
+        >
+          <Heading size="sm" mb={3} color="slate.900" fontWeight="700">
+            Slide {currentSlide} Feedback
+          </Heading>
           <Textarea
-            placeholder={`Feedback about slide ${currentSlide}...`}
+            placeholder={`Share your thoughts on slide ${currentSlide}...`}
             value={slideFeedback}
             onChange={(e) => setSlideFeedback(e.target.value)}
             rows={4}
-            borderColor="blue.200"
-            _hover={{ borderColor: "blue.300" }}
-            _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px var(--chakra-colors-blue-500)" }}
+            borderColor="slate.300"
+            borderRadius="lg"
+            _hover={{ borderColor: "brand.400" }}
+            _focus={{ 
+              borderColor: "brand.500", 
+              boxShadow: "0 0 0 1px var(--chakra-colors-brand-500)",
+              bg: "white"
+            }}
+            bg="white"
           />
           <Button
-            mt={2}
-            colorScheme="blue"
-            size="sm"
+            mt={3}
+            colorScheme="brand"
+            size="md"
             w="full"
+            fontWeight="600"
+            borderRadius="lg"
             onClick={submitSlideFeedback}
             loading={submitting}
             disabled={!slideFeedback.trim()}

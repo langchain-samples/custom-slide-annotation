@@ -139,6 +139,7 @@ class TraceSlide(BaseModel):
 
 class TracesResponse(BaseModel):
     traces: list[TraceSlide]
+    project_name: str
 
 
 class FeedbackSubmission(BaseModel):
@@ -293,7 +294,7 @@ async def get_recent_traces():
 
             result_traces.append(trace_slide)
 
-        return TracesResponse(traces=result_traces)
+        return TracesResponse(traces=result_traces, project_name=project_name)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

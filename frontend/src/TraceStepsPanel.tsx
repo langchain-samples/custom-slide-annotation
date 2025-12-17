@@ -84,14 +84,14 @@ export default function TraceStepsPanel({ runs }: TraceStepsPanelProps) {
   if (runs.length === 0) {
     return (
       <Box p={6} textAlign="center">
-        <Text color="gray.500">No trace steps available</Text>
+        <Text color="slate.500" fontWeight="500">No trace steps available</Text>
       </Box>
     );
   }
 
   return (
     <Box h="full" overflowY="auto" p={4}>
-      <Text fontSize="sm" fontWeight="bold" color="brand.700" mb={4} textTransform="uppercase" letterSpacing="wide">
+      <Text fontSize="xs" fontWeight="700" color="slate.500" mb={4} textTransform="uppercase" letterSpacing="wider">
         Trace Steps ({runs.length})
       </Text>
       
@@ -102,36 +102,38 @@ export default function TraceStepsPanel({ runs }: TraceStepsPanelProps) {
           return (
             <Box
               key={run.run_id}
-              border="1px"
-              borderColor="blue.200"
-              borderRadius="lg"
+              borderWidth="1px"
+              borderColor="slate.200"
+              borderRadius="xl"
               bg="white"
-              shadow="sm"
-              _hover={{ shadow: "md" }}
+              shadow="subtle"
+              _hover={{ shadow: "premium", borderColor: "brand.300" }}
+              transition="all 0.2s"
             >
               <Box
                 p={3}
                 cursor="pointer"
                 onClick={() => toggleStep(run.run_id)}
-                _hover={{ bg: "blue.50" }}
-                borderRadius="lg"
+                _hover={{ bg: "slate.50" }}
+                borderRadius="xl"
+                transition="all 0.15s"
               >
                 <HStack align="center" gap={2}>
-                  <Box>
-                    {isExpanded ? <HiChevronDown size={16} /> : <HiChevronRight size={16} />}
+                  <Box color="slate.500">
+                    {isExpanded ? <HiChevronDown size={18} /> : <HiChevronRight size={18} />}
                   </Box>
                   {getStatusIcon(run.status)}
                   <VStack align="start" gap={0} flex="1">
                     <HStack>
-                      <Text fontWeight="semibold" fontSize="sm" color="gray.800">
+                      <Text fontWeight="600" fontSize="sm" color="slate.900">
                         {run.name}
                       </Text>
-                      <Badge colorScheme={getRunTypeColor(run.run_type)} fontSize="xs" borderRadius="full">
+                      <Badge colorScheme={getRunTypeColor(run.run_type)} fontSize="xs" borderRadius="full" px={2} py={0.5}>
                         {run.run_type}
                       </Badge>
                     </HStack>
-                    <HStack gap={3} fontSize="xs" color="gray.600">
-                      <Text>Duration: {formatDuration(run.duration_ms)}</Text>
+                    <HStack gap={3} fontSize="xs" color="slate.600">
+                      <Text fontWeight="500">Duration: {formatDuration(run.duration_ms)}</Text>
                       <Badge colorScheme={getStatusColor(run.status)} fontSize="xs">
                         {run.status}
                       </Badge>
@@ -141,24 +143,24 @@ export default function TraceStepsPanel({ runs }: TraceStepsPanelProps) {
               </Box>
               
               {isExpanded && (
-                <Box pb={4} pt={2} px={3} bg="gray.50" borderTop="1px" borderColor="blue.100" borderBottomRadius="lg">
+                <Box pb={4} pt={2} px={3} bg="slate.50" borderTop="1px" borderColor="slate.200" borderBottomRadius="xl">
                   <VStack align="stretch" gap={3}>
                     {run.inputs_summary && (
                       <Box>
-                        <Text fontSize="xs" fontWeight="bold" color="gray.700" mb={1}>
+                        <Text fontSize="xs" fontWeight="700" color="slate.700" mb={2}>
                           Inputs:
                         </Text>
                         <Box
-                          borderRadius="md"
+                          borderRadius="lg"
                           maxH="200px"
                           overflowY="auto"
                           borderWidth="1px"
-                          borderColor="gray.200"
+                          borderColor="slate.200"
                         >
                           <SyntaxHighlighter 
                             language="json" 
                             style={vscDarkPlus} 
-                            customStyle={{fontSize: '11px', margin: 0, maxHeight: '200px'}}
+                            customStyle={{fontSize: '11px', margin: 0, maxHeight: '200px', borderRadius: '0.5rem'}}
                           >
                             {formatJson(run.inputs_summary)}
                           </SyntaxHighlighter>
@@ -168,20 +170,20 @@ export default function TraceStepsPanel({ runs }: TraceStepsPanelProps) {
                     
                     {run.outputs_summary && (
                       <Box>
-                        <Text fontSize="xs" fontWeight="bold" color="gray.700" mb={1}>
+                        <Text fontSize="xs" fontWeight="700" color="slate.700" mb={2}>
                           Outputs:
                         </Text>
                         <Box
-                          borderRadius="md"
+                          borderRadius="lg"
                           maxH="200px"
                           overflowY="auto"
                           borderWidth="1px"
-                          borderColor="gray.200"
+                          borderColor="slate.200"
                         >
                           <SyntaxHighlighter 
                             language="json" 
                             style={vscDarkPlus} 
-                            customStyle={{fontSize: '11px', margin: 0, maxHeight: '200px'}}
+                            customStyle={{fontSize: '11px', margin: 0, maxHeight: '200px', borderRadius: '0.5rem'}}
                           >
                             {formatJson(run.outputs_summary)}
                           </SyntaxHighlighter>
@@ -191,15 +193,16 @@ export default function TraceStepsPanel({ runs }: TraceStepsPanelProps) {
                     
                     {run.error && (
                       <Box>
-                        <Text fontSize="xs" fontWeight="bold" color="red.700" mb={1}>
+                        <Text fontSize="xs" fontWeight="700" color="red.700" mb={2}>
                           Error:
                         </Text>
                         <Box
-                          p={2}
+                          p={3}
                           bg="red.50"
-                          borderRadius="md"
+                          borderRadius="lg"
                           fontSize="xs"
                           color="red.700"
+                          fontWeight="500"
                           borderWidth="1px"
                           borderColor="red.200"
                         >
@@ -208,7 +211,7 @@ export default function TraceStepsPanel({ runs }: TraceStepsPanelProps) {
                       </Box>
                     )}
                     
-                    <HStack fontSize="xs" color="gray.500" gap={4}>
+                    <HStack fontSize="xs" color="slate.500" gap={4} fontFamily="mono">
                       <Text>Run ID: {run.run_id.slice(0, 8)}...</Text>
                       {run.parent_run_id && (
                         <Text>Parent: {run.parent_run_id.slice(0, 8)}...</Text>

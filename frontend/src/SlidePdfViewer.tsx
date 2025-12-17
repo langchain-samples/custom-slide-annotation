@@ -11,9 +11,10 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 interface SlidePdfViewerProps {
   pdfUrl: string;
   onPageChange?: (page: number) => void;
+  onNumPagesChange?: (numPages: number) => void;
 }
 
-export default function SlidePdfViewer({ pdfUrl, onPageChange }: SlidePdfViewerProps) {
+export default function SlidePdfViewer({ pdfUrl, onPageChange, onNumPagesChange }: SlidePdfViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [containerWidth, setContainerWidth] = useState<number>(0);
@@ -49,16 +50,25 @@ export default function SlidePdfViewer({ pdfUrl, onPageChange }: SlidePdfViewerP
   }, [numPages, onPageChange]);
 
   return (
-    <Flex direction="column" h="full" bg="blue.50">
-      <Box bg="white" borderBottomWidth="2px" borderColor="blue.200" p={4} shadow="md">
-        <HStack justify="center" gap={4}>
+    <Flex direction="column" h="full" bg="slate.50">
+      <Box 
+        bg="white" 
+        borderBottomWidth="1px" 
+        borderColor="slate.200" 
+        p={4}
+      >
+        <HStack justify="center" gap={3}>
           <Button
             size="md"
-            colorScheme="blue"
+            colorScheme="brand"
             variant="outline"
-            borderRadius="lg"
-            shadow="sm"
-            _hover={{ shadow: "md", transform: "translateY(-1px)" }}
+            borderRadius="xl"
+            fontWeight="600"
+            px={6}
+            shadow="subtle"
+            _hover={{ shadow: "premium", transform: "scale(1.02)" }}
+            _active={{ transform: "scale(0.98)" }}
+            transition="all 0.15s"
             onClick={() => updateCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
           >
@@ -66,17 +76,29 @@ export default function SlidePdfViewer({ pdfUrl, onPageChange }: SlidePdfViewerP
             Previous
           </Button>
 
-          <Badge colorScheme="blue" fontSize="md" px={6} py={2} borderRadius="full" shadow="sm">
+          <Badge 
+            colorScheme="brand" 
+            fontSize="md" 
+            px={6} 
+            py={3} 
+            borderRadius="full"
+            fontWeight="700"
+            shadow="subtle"
+          >
             Slide {currentPage} of {numPages || "..."}
           </Badge>
 
           <Button
             size="md"
-            colorScheme="blue"
+            colorScheme="brand"
             variant="outline"
-            borderRadius="lg"
-            shadow="sm"
-            _hover={{ shadow: "md", transform: "translateY(-1px)" }}
+            borderRadius="xl"
+            fontWeight="600"
+            px={6}
+            shadow="subtle"
+            _hover={{ shadow: "premium", transform: "scale(1.02)" }}
+            _active={{ transform: "scale(0.98)" }}
+            transition="all 0.15s"
             onClick={() => updateCurrentPage(Math.min(numPages, currentPage + 1))}
             disabled={currentPage === numPages}
           >
@@ -98,17 +120,20 @@ export default function SlidePdfViewer({ pdfUrl, onPageChange }: SlidePdfViewerP
         p={6}
         overflow="auto"
       >
-        <Box shadow="2xl" borderRadius="2xl" overflow="hidden" borderWidth="2px" borderColor="blue.200">
+        <Box shadow="premium" borderRadius="2xl" overflow="hidden" borderWidth="1px" borderColor="slate.200">
           <Document
             file={pdfUrl}
-            onLoadSuccess={(doc) => setNumPages(doc.numPages)}
+            onLoadSuccess={(doc) => {
+              setNumPages(doc.numPages);
+              onNumPagesChange?.(doc.numPages);
+            }}
             loading={
               <HStack p={8} gap={3}>
                 <Spinner color="brand.500" />
-                <Text>Loading slides…</Text>
+                <Text color="slate.600" fontWeight="500">Loading slides…</Text>
               </HStack>
             }
-            error={<Text color="red.500" p={8}>Failed to load PDF</Text>}
+            error={<Text color="red.500" p={8} fontWeight="600">Failed to load PDF</Text>}
           >
             <Page
               pageNumber={currentPage}
@@ -131,10 +156,10 @@ export default function SlidePdfViewer({ pdfUrl, onPageChange }: SlidePdfViewerP
         </Box>
       </Flex>
 
-      <Box bg="white" borderTopWidth="1px" borderColor="gray.200" py={2} textAlign="center">
-        <Text fontSize="xs" color="gray.500">
-          Use <Box as="kbd" px={1} py={0.5} bg="gray.100" borderRadius="sm" fontSize="xs" display="inline">←</Box>{" "}
-          <Box as="kbd" px={1} py={0.5} bg="gray.100" borderRadius="sm" fontSize="xs" display="inline">→</Box> arrow keys to navigate
+      <Box bg="white" borderTopWidth="1px" borderColor="slate.200" py={2} textAlign="center">
+        <Text fontSize="xs" color="slate.500" fontWeight="500">
+          Use <Box as="kbd" px={1} py={0.5} bg="slate.100" borderRadius="sm" fontSize="xs" display="inline" fontWeight="600">←</Box>{" "}
+          <Box as="kbd" px={1} py={0.5} bg="slate.100" borderRadius="sm" fontSize="xs" display="inline" fontWeight="600">→</Box> arrow keys to navigate
         </Text>
       </Box>
     </Flex>

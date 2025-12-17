@@ -12,10 +12,11 @@ import {
   Badge,
   Card,
 } from "@chakra-ui/react";
-import { HiRefresh, HiExternalLink } from "react-icons/hi";
+import { HiRefresh } from "react-icons/hi";
 import SlidePdfViewer from "./SlidePdfViewer";
 import TraceStepsPanel from "./TraceStepsPanel";
 import FeedbackPanel from "./FeedbackPanel";
+import TraceMetadataPanel from "./TraceMetadataPanel";
 
 interface TraceRun {
   run_id: string;
@@ -45,6 +46,7 @@ interface TraceSlide {
 
 interface TracesResponse {
   traces: TraceSlide[];
+  project_name: string;
 }
 
 function App() {
@@ -53,6 +55,8 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [selectedTrace, setSelectedTrace] = useState<TraceSlide | null>(null);
   const [currentSlide, setCurrentSlide] = useState(1);
+  const [numPages, setNumPages] = useState(0);
+  const [projectName, setProjectName] = useState<string>("");
 
   useEffect(() => {
     fetchTraces();
@@ -67,6 +71,7 @@ function App() {
       }
       const data: TracesResponse = await response.json();
       setTraces(data.traces);
+      setProjectName(data.project_name);
       if (data.traces.length > 0) {
         setSelectedTrace(data.traces[0]);
       }
@@ -104,10 +109,10 @@ function App() {
 
   if (loading) {
     return (
-      <Flex minH="100vh" align="center" justify="center" bg="blue.100">
+      <Flex minH="100vh" align="center" justify="center" bg="slate.50">
         <VStack gap={4}>
-          <Spinner size="xl" color="blue.500" borderWidth="4px" />
-          <Text color="gray.600">Loading traces from LangSmith...</Text>
+          <Spinner size="xl" color="brand.500" borderWidth="4px" />
+          <Text color="slate.600" fontWeight="500">Loading traces from LangSmith...</Text>
         </VStack>
       </Flex>
     );
@@ -115,8 +120,8 @@ function App() {
 
   if (error) {
     return (
-      <Flex minH="100vh" align="center" justify="center" bg="blue.100">
-        <Card.Root maxW="md" shadow="2xl" borderRadius="2xl" borderWidth="1px" borderColor="red.200">
+      <Flex minH="100vh" align="center" justify="center" bg="slate.50">
+        <Card.Root maxW="md" shadow="premium" borderRadius="2xl" borderWidth="1px" borderColor="slate.200">
           <Card.Body p={8}>
             <VStack gap={6}>
               <Box bg="red.50" p={6} borderRadius="xl" borderWidth="2px" borderColor="red.300" w="full">
@@ -124,12 +129,13 @@ function App() {
                 <Text color="red.600" fontSize="md">{error}</Text>
               </Box>
               <Button 
-                colorScheme="blue" 
+                colorScheme="brand" 
                 size="lg"
                 w="full"
-                shadow="lg"
+                shadow="premium"
                 borderRadius="xl"
-                _hover={{ shadow: "xl", transform: "translateY(-1px)" }}
+                fontWeight="600"
+                _hover={{ shadow: "elevated", transform: "translateY(-1px)" }}
                 onClick={fetchTraces}
               >
                 <HiRefresh style={{ marginRight: '8px' }} />
@@ -143,40 +149,82 @@ function App() {
   }
 
   return (
-    <Box minH="100vh" bg="blue.100">
-      <Box bg="white" shadow="lg" borderBottomWidth="2px" borderColor="blue.300">
-        <Container maxW="container.xl">
-          <Flex h="20" align="center" justify="space-between">
-            <Heading 
-              size="2xl" 
-              fontWeight="bold" 
-              bgGradient="to-r" 
-              gradientFrom="brand.600" 
-              gradientTo="brand.800" 
-              bgClip="text"
-              letterSpacing="tight"
-            >
-              Custom Annotation Queue: Backed by LangSmith
-            </Heading>
-            <Button 
-              colorScheme="blue" 
-              size="md"
-              shadow="lg"
+    <Box minH="100vh" bg="slate.50">
+      <Box 
+        bg="white" 
+        borderBottomWidth="1px" 
+        borderColor="slate.200"
+        shadow="subtle"
+        position="sticky"
+        top="0"
+        zIndex="10"
+      >
+        <Container maxW="full" px={8}>
+          <Flex h="72px" align="center" justify="space-between">
+            {/* Left: Title + Project Badge */}
+            <HStack gap={4} align="center">
+              <Heading 
+                size="2xl" 
+                fontWeight="700" 
+                bgGradient="to-r"
+                gradientFrom="brand.600"
+                gradientTo="brand.800"
+                bgClip="text"
+                letterSpacing="-0.02em"
+              >
+                Annotation Queue
+              </Heading>
+              <Badge
+                colorScheme="blue"
+                px={4}
+                py={2}
+                borderRadius="full"
+                fontSize="sm"
+                fontWeight="600"
+                shadow="subtle"
+              >
+                {projectName || "LangSmith Project"}
+              </Badge>
+            </HStack>
+
+            {/* Right: Refresh Button */}
+            <Button
+              size="lg"
+              colorScheme="brand"
               borderRadius="xl"
-              _hover={{ shadow: "xl", transform: "translateY(-1px)" }}
+              shadow="premium"
+              px={6}
+              fontWeight="600"
+              _hover={{ shadow: "elevated", transform: "translateY(-2px)" }}
+              transition="all 0.2s"
               onClick={fetchTraces}
+              disabled={loading}
             >
               <HiRefresh style={{ marginRight: '8px' }} />
-              Refresh
+              Refresh Traces
             </Button>
           </Flex>
         </Container>
       </Box>
 
-      <Flex h="calc(100vh - 81px)">
+      <Flex h="calc(100vh - 72px)">
         {/* Sidebar - Trace Cards */}
-        <Box w="280px" bg="blue.50" borderRightWidth="2px" borderColor="brand.200" overflowY="auto" p={4} shadow="inner">
-          <Text fontSize="sm" fontWeight="bold" color="brand.700" mb={4} textTransform="uppercase" letterSpacing="wide">
+        <Box 
+          w="300px" 
+          bg="slate.50" 
+          borderRightWidth="1px" 
+          borderColor="slate.200" 
+          overflowY="auto" 
+          p={4}
+        >
+          <Text 
+            fontSize="xs" 
+            fontWeight="700" 
+            color="slate.500" 
+            mb={4} 
+            textTransform="uppercase" 
+            letterSpacing="wider"
+          >
             Recent Traces
           </Text>
           <VStack gap={3} align="stretch">
@@ -185,53 +233,41 @@ function App() {
                 key={trace.trace_id}
                 cursor="pointer"
                 onClick={() => setSelectedTrace(trace)}
-                bg={selectedTrace?.trace_id === trace.trace_id ? "blue.200" : "white"}
+                bg="white"
                 borderWidth="2px"
-                borderColor={selectedTrace?.trace_id === trace.trace_id ? "blue.500" : "blue.200"}
+                borderColor={selectedTrace?.trace_id === trace.trace_id ? "brand.500" : "slate.200"}
                 borderRadius="xl"
-                shadow={selectedTrace?.trace_id === trace.trace_id ? "xl" : "md"}
-                _hover={{ shadow: "xl", borderColor: "blue.400", transform: "translateY(-2px)" }}
-                transition="all 0.2s"
+                shadow={selectedTrace?.trace_id === trace.trace_id ? "premium" : "subtle"}
+                _hover={{ 
+                  shadow: "premium", 
+                  borderColor: "brand.400",
+                  transform: "translateX(4px)" 
+                }}
+                transition="all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
               >
                 <Card.Body p={4}>
-                  <VStack align="stretch" gap={2}>
-                    <Text fontWeight="bold" fontSize="sm" color={selectedTrace?.trace_id === trace.trace_id ? "blue.900" : "gray.800"}>
+                  <VStack align="stretch" gap={3}>
+                    <Text 
+                      fontWeight="700" 
+                      fontSize="sm" 
+                      color={selectedTrace?.trace_id === trace.trace_id ? "brand.900" : "slate.900"}
+                      lineHeight="1.4"
+                    >
                       {trace.trace_name}
                     </Text>
-                    <Text fontSize="xs" color="gray.600">
+                    <Text fontSize="xs" color="slate.500" fontWeight="500">
                       {formatDate(trace.created_at)}
                     </Text>
-                    <VStack align="stretch" gap={2}>
-                      <HStack gap={2} flexWrap="wrap">
-                        {trace.has_pdf && <Badge colorScheme="green" fontSize="xs" borderRadius="full">PDF</Badge>}
-                        {trace.conversion_failed && <Badge colorScheme="red" fontSize="xs" borderRadius="full">Failed</Badge>}
-                        {trace.pptx_base64 && !trace.has_pdf && !trace.conversion_failed && (
-                          <Badge colorScheme="orange" fontSize="xs" borderRadius="full">PPTX Only</Badge>
-                        )}
-                        {!trace.pptx_base64 && trace.error && (
-                          <Badge colorScheme="red" fontSize="xs" borderRadius="full">No PPTX</Badge>
-                        )}
-                      </HStack>
-                      {trace.langsmith_url && (
-                        <a
-                          href={trace.langsmith_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ textDecoration: 'none', width: '100%' }}
-                        >
-                          <Button
-                            size="xs"
-                            colorScheme="blue"
-                            variant="ghost"
-                            w="full"
-                            justifyContent="flex-start"
-                          >
-                            <HiExternalLink style={{ marginRight: '4px' }} />
-                            View in LangSmith
-                          </Button>
-                        </a>
+                    <HStack gap={2} flexWrap="wrap">
+                      {trace.has_pdf && <Badge colorScheme="green" fontSize="xs" borderRadius="full" px={2} py={1}>PDF</Badge>}
+                      {trace.conversion_failed && <Badge colorScheme="red" fontSize="xs" borderRadius="full" px={2} py={1}>Failed</Badge>}
+                      {trace.pptx_base64 && !trace.has_pdf && !trace.conversion_failed && (
+                        <Badge colorScheme="orange" fontSize="xs" borderRadius="full" px={2} py={1}>PPTX Only</Badge>
                       )}
-                    </VStack>
+                      {!trace.pptx_base64 && trace.error && (
+                        <Badge colorScheme="red" fontSize="xs" borderRadius="full" px={2} py={1}>No PPTX</Badge>
+                      )}
+                    </HStack>
                   </VStack>
                 </Card.Body>
               </Card.Root>
@@ -240,33 +276,50 @@ function App() {
         </Box>
 
         {/* Steps Panel - Accordion */}
-        <Box w="350px" bg="white" borderRightWidth="2px" borderColor="brand.200" overflowY="auto" shadow="inner">
+        <Box w="350px" bg="white" borderRightWidth="1px" borderColor="slate.200" overflowY="auto">
           {selectedTrace ? (
             <TraceStepsPanel runs={selectedTrace.runs} />
           ) : (
             <Box p={6} textAlign="center">
-              <Text color="gray.500">Select a trace to view steps</Text>
+              <Text color="slate.500" fontWeight="500">Select a trace to view steps</Text>
             </Box>
           )}
         </Box>
 
         {/* Main Viewer */}
-        <Box flex="1" p={6} bg="blue.50">
+        <Box flex="1" p={6} bg="slate.50">
           {selectedTrace ? (
             <VStack gap={4} h="full" align="stretch">
-              <Heading size="lg" mb={2}>{selectedTrace.trace_name}</Heading>
+              {/* NEW: Metadata Panel */}
+              <TraceMetadataPanel
+                traceId={selectedTrace.trace_id}
+                traceName={selectedTrace.trace_name}
+                projectName={projectName}
+                langsmithUrl={selectedTrace.langsmith_url}
+                createdAt={selectedTrace.created_at}
+              />
 
-              <Card.Root flex="1" shadow="2xl" bg="white" borderRadius="2xl" borderWidth="2px" borderColor="blue.200">
-                <Card.Body p={0} h="full" borderRadius="2xl" overflow="hidden">
+              {/* PDF Viewer Card */}
+              <Card.Root 
+                flex="1" 
+                shadow="premium" 
+                bg="white" 
+                borderRadius="2xl" 
+                borderWidth="1px" 
+                borderColor="slate.200"
+                overflow="hidden"
+              >
+                <Card.Body p={0} h="full">
                   {selectedTrace.has_pdf ? (
                     <SlidePdfViewer 
                       pdfUrl={`/api/traces/${selectedTrace.trace_id}/slides.pdf`}
                       onPageChange={setCurrentSlide}
+                      onNumPagesChange={setNumPages}
                     />
                   ) : selectedTrace.conversion_failed ? (
                     <Flex align="center" justify="center" h="full">
-                      <Box bg="red.50" p={8} borderRadius="2xl" borderWidth="2px" borderColor="red.300" maxW="md" shadow="xl">
-                        <Heading size="md" color="red.700" mb={3} fontWeight="bold">Conversion Failed</Heading>
+                      <Box bg="red.50" p={8} borderRadius="2xl" borderWidth="2px" borderColor="red.300" maxW="md" shadow="premium">
+                        <Heading size="md" color="red.700" mb={3} fontWeight="700">Conversion Failed</Heading>
                         <Text color="red.600" fontSize="sm">
                           This file may be corrupt or in an unsupported format.
                         </Text>
@@ -274,17 +327,17 @@ function App() {
                     </Flex>
                   ) : selectedTrace.pptx_base64 ? (
                     <Flex align="center" justify="center" h="full">
-                      <Box bg="orange.50" p={8} borderRadius="2xl" borderWidth="2px" borderColor="orange.300" maxW="md" shadow="xl">
-                        <Heading size="md" color="orange.700" mb={3} fontWeight="bold">PDF Conversion Not Available</Heading>
+                      <Box bg="orange.50" p={8} borderRadius="2xl" borderWidth="2px" borderColor="orange.300" maxW="md" shadow="premium">
+                        <Heading size="md" color="orange.700" mb={3} fontWeight="700">PDF Conversion Not Available</Heading>
                         <Text color="orange.700" fontSize="sm">
-                          LibreOffice is not installed. You can download the PPTX file above.
+                          LibreOffice is not installed. You can download the PPTX file from the feedback panel.
                         </Text>
                       </Box>
                     </Flex>
                   ) : (
                     <Flex align="center" justify="center" h="full">
-                      <Box bg="red.50" p={8} borderRadius="2xl" borderWidth="2px" borderColor="red.300" maxW="md" shadow="xl">
-                        <Heading size="md" color="red.700" mb={3} fontWeight="bold">No Presentation Found</Heading>
+                      <Box bg="red.50" p={8} borderRadius="2xl" borderWidth="2px" borderColor="red.300" maxW="md" shadow="premium">
+                        <Heading size="md" color="red.700" mb={3} fontWeight="700">No Presentation Found</Heading>
                         <Text color="red.600" fontSize="sm">
                           {selectedTrace.error || "This trace does not contain PPTX output."}
                         </Text>
@@ -297,29 +350,29 @@ function App() {
           ) : (
             <Flex align="center" justify="center" h="full">
               <VStack gap={4}>
-                <Heading size="xl" color="blue.600" fontWeight="bold">
+                <Heading size="xl" color="brand.600" fontWeight="700">
                   Select a trace
                 </Heading>
-                <Text color="gray.600" fontSize="lg">Choose a trace from the sidebar to view its presentation</Text>
+                <Text color="slate.600" fontSize="lg" fontWeight="500">Choose a trace from the sidebar to view its presentation</Text>
               </VStack>
             </Flex>
           )}
         </Box>
 
-        {/* Feedback Panel - NEW 4th Column */}
-        <Box w="320px" bg="white" borderLeftWidth="2px" borderColor="blue.200" p={4} overflowY="auto" shadow="inner">
+        {/* Feedback Panel - 4th Column */}
+        <Box w="320px" bg="white" borderLeftWidth="1px" borderColor="slate.200" p={4} overflowY="auto">
           {selectedTrace ? (
             <FeedbackPanel
               trace={selectedTrace}
               currentSlide={currentSlide}
-              totalSlides={0}
+              totalSlides={numPages}
               onDownload={() =>
                 downloadPptx(selectedTrace.pptx_base64!, `${selectedTrace.trace_name}.pptx`)
               }
             />
           ) : (
             <Box p={6} textAlign="center">
-              <Text color="gray.500">Select a trace to provide feedback</Text>
+              <Text color="slate.500" fontWeight="500">Select a trace to provide feedback</Text>
             </Box>
           )}
         </Box>
