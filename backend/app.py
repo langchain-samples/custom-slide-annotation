@@ -13,6 +13,7 @@ import subprocess
 from io import BytesIO
 from pathlib import Path
 from typing import Optional
+from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -133,10 +134,28 @@ class TraceSlide(BaseModel):
     conversion_failed: bool = False
     error: Optional[str] = None
     runs: list[TraceRun] = []
+    langsmith_url: Optional[str] = None
 
 
 class TracesResponse(BaseModel):
     traces: list[TraceSlide]
+
+
+class FeedbackSubmission(BaseModel):
+    trace_id: str
+    feedback_type: str  # "trace" or "slide"
+    content: str
+    slide_number: Optional[int] = None
+    timestamp: Optional[str] = None
+
+
+class FeedbackResponse(BaseModel):
+    success: bool
+    message: str
+
+
+# Simple in-memory storage (could be DB later)
+feedback_storage: list[FeedbackSubmission] = []
 
 
 # ============================================================================
@@ -211,10 +230,17 @@ async def get_recent_traces():
         result_traces: list[TraceSlide] = []
         for run in root_runs:
             trace_id = str(run.trace_id)
+            
+            # Build LangSmith URL
+            langsmith_org = os.getenv("LANGSMITH_ORG", "")
+            langsmith_project = os.getenv("LANGSMITH_PROJECT", "default")
+            langsmith_url = f"https://smith.langchain.com/o/{langsmith_org}/projects/p/{langsmith_project}/r/{trace_id}" if langsmith_org else None
+            
             trace_slide = TraceSlide(
                 trace_id=trace_id,
                 trace_name=run.name or "Unnamed",
                 created_at=run.start_time.isoformat() if run.start_time else "",
+                langsmith_url=langsmith_url,
             )
 
             # Extract PPTX
@@ -301,6 +327,33 @@ async def get_trace_pdf(trace_id: str):
         media_type="application/pdf",
         headers={"Content-Disposition": f"inline; filename=slides-{trace_id}.pdf"}
     )
+
+
+@app.post("/api/feedback", response_model=FeedbackResponse)
+async def submit_feedback(submission: FeedbackSubmission):
+    """Store feedback about traces or specific slides."""
+    try:
+        submission.timestamp = datetime.utcnow().isoformat()
+        feedback_storage.append(submission)
+        
+        # Optional: Also send to LangSmith as annotation
+        # ls_client.create_feedback(...)
+        
+        print(f"Received feedback for trace {submission.trace_id}: {submission.content[:50]}...")
+        
+        return FeedbackResponse(
+            success=True,
+            message="Feedback submitted successfully"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/feedback/{trace_id}")
+async def get_feedback(trace_id: str):
+    """Get all feedback for a specific trace."""
+    trace_feedback = [f for f in feedback_storage if f.trace_id == trace_id]
+    return {"feedback": trace_feedback}
 
 
 @app.get("/api/health")

@@ -7,6 +7,8 @@ import {
   Badge,
 } from "@chakra-ui/react";
 import { HiCheckCircle, HiXCircle, HiClock, HiChevronDown, HiChevronRight } from "react-icons/hi";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface TraceRun {
   run_id: string;
@@ -37,6 +39,15 @@ export default function TraceStepsPanel({ runs }: TraceStepsPanelProps) {
       newExpanded.add(runId);
     }
     setExpandedSteps(newExpanded);
+  };
+
+  const formatJson = (jsonString: string) => {
+    try {
+      const parsed = JSON.parse(jsonString);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      return jsonString;
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -138,18 +149,19 @@ export default function TraceStepsPanel({ runs }: TraceStepsPanelProps) {
                           Inputs:
                         </Text>
                         <Box
-                          p={2}
-                          bg="white"
                           borderRadius="md"
-                          fontSize="xs"
-                          fontFamily="mono"
-                          color="gray.700"
-                          maxH="100px"
+                          maxH="200px"
                           overflowY="auto"
                           borderWidth="1px"
                           borderColor="gray.200"
                         >
-                          {run.inputs_summary}
+                          <SyntaxHighlighter 
+                            language="json" 
+                            style={vscDarkPlus} 
+                            customStyle={{fontSize: '11px', margin: 0, maxHeight: '200px'}}
+                          >
+                            {formatJson(run.inputs_summary)}
+                          </SyntaxHighlighter>
                         </Box>
                       </Box>
                     )}
@@ -160,18 +172,19 @@ export default function TraceStepsPanel({ runs }: TraceStepsPanelProps) {
                           Outputs:
                         </Text>
                         <Box
-                          p={2}
-                          bg="white"
                           borderRadius="md"
-                          fontSize="xs"
-                          fontFamily="mono"
-                          color="gray.700"
-                          maxH="100px"
+                          maxH="200px"
                           overflowY="auto"
                           borderWidth="1px"
                           borderColor="gray.200"
                         >
-                          {run.outputs_summary}
+                          <SyntaxHighlighter 
+                            language="json" 
+                            style={vscDarkPlus} 
+                            customStyle={{fontSize: '11px', margin: 0, maxHeight: '200px'}}
+                          >
+                            {formatJson(run.outputs_summary)}
+                          </SyntaxHighlighter>
                         </Box>
                       </Box>
                     )}

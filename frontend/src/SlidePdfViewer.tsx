@@ -10,29 +10,43 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 interface SlidePdfViewerProps {
   pdfUrl: string;
+  onPageChange?: (page: number) => void;
 }
 
-export default function SlidePdfViewer({ pdfUrl }: SlidePdfViewerProps) {
+export default function SlidePdfViewer({ pdfUrl, onPageChange }: SlidePdfViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [containerWidth, setContainerWidth] = useState<number>(0);
 
+  const updateCurrentPage = (page: number) => {
+    setCurrentPage(page);
+    onPageChange?.(page);
+  };
+
   useEffect(() => {
-    setCurrentPage(1);
+    updateCurrentPage(1);
   }, [pdfUrl]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-        setCurrentPage((prev) => Math.max(1, prev - 1));
+        setCurrentPage((prev) => {
+          const newPage = Math.max(1, prev - 1);
+          onPageChange?.(newPage);
+          return newPage;
+        });
       } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-        setCurrentPage((prev) => Math.min(numPages, prev + 1));
+        setCurrentPage((prev) => {
+          const newPage = Math.min(numPages, prev + 1);
+          onPageChange?.(newPage);
+          return newPage;
+        });
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [numPages]);
+  }, [numPages, onPageChange]);
 
   return (
     <Flex direction="column" h="full" bg="blue.50">
@@ -45,7 +59,7 @@ export default function SlidePdfViewer({ pdfUrl }: SlidePdfViewerProps) {
             borderRadius="lg"
             shadow="sm"
             _hover={{ shadow: "md", transform: "translateY(-1px)" }}
-            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            onClick={() => updateCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
           >
             <HiChevronLeft style={{ marginRight: '4px' }} />
@@ -63,7 +77,7 @@ export default function SlidePdfViewer({ pdfUrl }: SlidePdfViewerProps) {
             borderRadius="lg"
             shadow="sm"
             _hover={{ shadow: "md", transform: "translateY(-1px)" }}
-            onClick={() => setCurrentPage((prev) => Math.min(numPages, prev + 1))}
+            onClick={() => updateCurrentPage(Math.min(numPages, currentPage + 1))}
             disabled={currentPage === numPages}
           >
             Next
