@@ -85,10 +85,18 @@ def convert_pptx_to_pdf(pptx_bytes: bytes) -> Optional[bytes]:
                     if pdf_path.exists():
                         print(f"Successfully converted PPTX to PDF using {cmd}")
                         return pdf_path.read_bytes()
-                except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+                except subprocess.TimeoutExpired:
+                    print(f"Timeout converting with {cmd} - file may be too large or corrupt")
+                    continue
+                except subprocess.CalledProcessError as e:
+                    print(f"LibreOffice conversion failed with {cmd} - file may be corrupt or unsupported format")
+                    if e.stderr:
+                        print(f"  Error details: {e.stderr.decode()}")
+                    continue
+                except FileNotFoundError:
                     continue
             
-            print("LibreOffice not found or conversion failed")
+            print("LibreOffice conversion failed - file may be corrupt or unsupported format")
             return None
             
     except Exception as e:
@@ -102,13 +110,29 @@ def convert_pptx_to_pdf(pptx_bytes: bytes) -> Optional[bytes]:
 # PYDANTIC MODELS
 # ============================================================================
 
+class TraceRun(BaseModel):
+    run_id: str
+    name: str
+    run_type: str  # "llm", "tool", "chain", etc.
+    status: str  # "success", "error", etc.
+    start_time: str
+    end_time: Optional[str] = None
+    duration_ms: Optional[int] = None
+    inputs_summary: Optional[str] = None  # Truncated/formatted inputs
+    outputs_summary: Optional[str] = None  # Truncated/formatted outputs
+    error: Optional[str] = None
+    parent_run_id: Optional[str] = None
+
+
 class TraceSlide(BaseModel):
     trace_id: str
     trace_name: str
     created_at: str
     pptx_base64: Optional[str] = None
     has_pdf: bool = False
+    conversion_failed: bool = False
     error: Optional[str] = None
+    runs: list[TraceRun] = []
 
 
 class TracesResponse(BaseModel):
@@ -118,6 +142,16 @@ class TracesResponse(BaseModel):
 # ============================================================================
 # API ENDPOINTS
 # ============================================================================
+
+def format_io_summary(data: dict, max_length: int = 200) -> str:
+    """Format inputs/outputs as truncated JSON string"""
+    import json
+    try:
+        text = json.dumps(data, indent=0)
+        return text[:max_length] + "..." if len(text) > max_length else text
+    except Exception:
+        return str(data)[:max_length]
+
 
 def extract_pptx_from_trace(trace_id: str) -> Optional[bytes]:
     """Extract PPTX bytes from a trace's finalize_presentation tool call."""
@@ -164,7 +198,7 @@ def extract_pptx_from_trace(trace_id: str) -> Optional[bytes]:
 
 @app.get("/api/traces", response_model=TracesResponse)
 async def get_recent_traces():
-    """Get the last 3 traces with their PPTX outputs."""
+    """Get the last 3 traces with their PPTX outputs and all runs."""
     project_name = os.getenv("LANGSMITH_PROJECT", "default")
 
     try:
@@ -183,6 +217,7 @@ async def get_recent_traces():
                 created_at=run.start_time.isoformat() if run.start_time else "",
             )
 
+            # Extract PPTX
             pptx_bytes = extract_pptx_from_trace(trace_id)
             if pptx_bytes:
                 trace_slide.pptx_base64 = base64.b64encode(pptx_bytes).decode()
@@ -194,8 +229,41 @@ async def get_recent_traces():
                     trace_slide.has_pdf = True
                 else:
                     trace_slide.has_pdf = False
+                    trace_slide.conversion_failed = True
             else:
                 trace_slide.error = "No PPTX output found in trace"
+
+            # NEW: Fetch all child runs for the trace
+            try:
+                all_runs = list(ls_client.list_runs(
+                    project_name=project_name,
+                    trace_id=trace_id,
+                ))
+                
+                trace_runs = []
+                for r in sorted(all_runs, key=lambda x: x.start_time if x.start_time else ""):
+                    duration = None
+                    if r.end_time and r.start_time:
+                        duration = int((r.end_time - r.start_time).total_seconds() * 1000)
+                    
+                    trace_runs.append(TraceRun(
+                        run_id=str(r.id),
+                        name=r.name or "Unnamed",
+                        run_type=r.run_type or "unknown",
+                        status=r.status or "unknown",
+                        start_time=r.start_time.isoformat() if r.start_time else "",
+                        end_time=r.end_time.isoformat() if r.end_time else None,
+                        duration_ms=duration,
+                        inputs_summary=format_io_summary(r.inputs) if r.inputs else None,
+                        outputs_summary=format_io_summary(r.outputs) if r.outputs else None,
+                        error=r.error if r.error else None,
+                        parent_run_id=str(r.parent_run_id) if r.parent_run_id else None,
+                    ))
+                
+                trace_slide.runs = trace_runs
+            except Exception as e:
+                print(f"Error fetching runs for trace {trace_id}: {e}")
+                trace_slide.runs = []
 
             result_traces.append(trace_slide)
 

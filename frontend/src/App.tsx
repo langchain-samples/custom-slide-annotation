@@ -1,6 +1,34 @@
 import { useState, useEffect } from "react";
-import "./App.css";
+import {
+  Box,
+  Container,
+  Heading,
+  Text,
+  Button,
+  VStack,
+  HStack,
+  Flex,
+  Spinner,
+  Badge,
+  Card,
+} from "@chakra-ui/react";
+import { HiRefresh, HiDownload } from "react-icons/hi";
 import SlidePdfViewer from "./SlidePdfViewer";
+import TraceStepsPanel from "./TraceStepsPanel";
+
+interface TraceRun {
+  run_id: string;
+  name: string;
+  run_type: string;
+  status: string;
+  start_time: string;
+  end_time?: string;
+  duration_ms?: number;
+  inputs_summary?: string;
+  outputs_summary?: string;
+  error?: string;
+  parent_run_id?: string;
+}
 
 interface TraceSlide {
   trace_id: string;
@@ -8,7 +36,9 @@ interface TraceSlide {
   created_at: string;
   pptx_base64?: string;
   has_pdf: boolean;
+  conversion_failed: boolean;
   error?: string;
+  runs: TraceRun[];
 }
 
 interface TracesResponse {
@@ -71,122 +101,202 @@ function App() {
 
   if (loading) {
     return (
-      <div className="app">
-        <div className="loading">
-          <div className="spinner"></div>
-          <p>Loading traces from LangSmith...</p>
-        </div>
-      </div>
+      <Flex minH="100vh" align="center" justify="center" bg="blue.100">
+        <VStack gap={4}>
+          <Spinner size="xl" color="blue.500" borderWidth="4px" />
+          <Text color="gray.600">Loading traces from LangSmith...</Text>
+        </VStack>
+      </Flex>
     );
   }
 
   if (error) {
     return (
-      <div className="app">
-        <div className="error-container">
-          <h2>Error</h2>
-          <p>{error}</p>
-          <button onClick={fetchTraces}>Retry</button>
-        </div>
-      </div>
+      <Flex minH="100vh" align="center" justify="center" bg="blue.100">
+        <Card.Root maxW="md" shadow="2xl" borderRadius="2xl" borderWidth="1px" borderColor="red.200">
+          <Card.Body p={8}>
+            <VStack gap={6}>
+              <Box bg="red.50" p={6} borderRadius="xl" borderWidth="2px" borderColor="red.300" w="full">
+                <Heading size="lg" color="red.700" mb={3} fontWeight="bold">Error</Heading>
+                <Text color="red.600" fontSize="md">{error}</Text>
+              </Box>
+              <Button 
+                colorScheme="blue" 
+                size="lg"
+                w="full"
+                shadow="lg"
+                borderRadius="xl"
+                _hover={{ shadow: "xl", transform: "translateY(-1px)" }}
+                onClick={fetchTraces}
+              >
+                <HiRefresh style={{ marginRight: '8px' }} />
+                Retry
+              </Button>
+            </VStack>
+          </Card.Body>
+        </Card.Root>
+      </Flex>
     );
   }
 
   return (
-    <div className="app">
-      <header className="header">
-        <h1>Slide Viewer</h1>
-        <p className="subtitle">View AI-generated presentations as real slides</p>
-        <button className="refresh-btn" onClick={fetchTraces}>
-          Refresh
-        </button>
-      </header>
+    <Box minH="100vh" bg="blue.100">
+      <Box bg="white" shadow="lg" borderBottomWidth="2px" borderColor="blue.300">
+        <Container maxW="container.xl">
+          <Flex h="20" align="center" justify="space-between">
+            <Heading 
+              size="2xl" 
+              fontWeight="bold" 
+              bgGradient="to-r" 
+              gradientFrom="brand.600" 
+              gradientTo="brand.800" 
+              bgClip="text"
+              letterSpacing="tight"
+            >
+              Custom Annotation Queue: Backed by LangSmith
+            </Heading>
+            <Button 
+              colorScheme="blue" 
+              size="md"
+              shadow="lg"
+              borderRadius="xl"
+              _hover={{ shadow: "xl", transform: "translateY(-1px)" }}
+              onClick={fetchTraces}
+            >
+              <HiRefresh style={{ marginRight: '8px' }} />
+              Refresh
+            </Button>
+          </Flex>
+        </Container>
+      </Box>
 
-      <div className="main-content">
-        <aside className="sidebar">
-          <h2>Recent Traces</h2>
-          <ul className="trace-list">
+      <Flex h="calc(100vh - 81px)">
+        {/* Sidebar - Trace Cards */}
+        <Box w="320px" bg="blue.50" borderRightWidth="2px" borderColor="brand.200" overflowY="auto" p={4} shadow="inner">
+          <Text fontSize="sm" fontWeight="bold" color="brand.700" mb={4} textTransform="uppercase" letterSpacing="wide">
+            Recent Traces
+          </Text>
+          <VStack gap={3} align="stretch">
             {traces.map((trace) => (
-              <li
+              <Card.Root
                 key={trace.trace_id}
-                className={`trace-item ${
-                  selectedTrace?.trace_id === trace.trace_id ? "selected" : ""
-                }`}
+                cursor="pointer"
                 onClick={() => setSelectedTrace(trace)}
+                bg={selectedTrace?.trace_id === trace.trace_id ? "blue.200" : "white"}
+                borderWidth="2px"
+                borderColor={selectedTrace?.trace_id === trace.trace_id ? "blue.500" : "blue.200"}
+                borderRadius="xl"
+                shadow={selectedTrace?.trace_id === trace.trace_id ? "xl" : "md"}
+                _hover={{ shadow: "xl", borderColor: "blue.400", transform: "translateY(-2px)" }}
+                transition="all 0.2s"
               >
-                <div className="trace-name">{trace.trace_name}</div>
-                <div className="trace-date">{formatDate(trace.created_at)}</div>
-                <div className="trace-status">
-                  {trace.has_pdf && (
-                    <span className="status-badge success">PDF</span>
-                  )}
-                  {trace.pptx_base64 && !trace.has_pdf && (
-                    <span className="status-badge warning">PPTX Only</span>
-                  )}
-                  {!trace.pptx_base64 && trace.error && (
-                    <span className="status-badge error">No PPTX</span>
-                  )}
-                </div>
-              </li>
+                <Card.Body p={4}>
+                  <VStack align="stretch" gap={2}>
+                    <Text fontWeight="bold" fontSize="sm" color={selectedTrace?.trace_id === trace.trace_id ? "blue.900" : "gray.800"}>
+                      {trace.trace_name}
+                    </Text>
+                    <Text fontSize="xs" color="gray.600">
+                      {formatDate(trace.created_at)}
+                    </Text>
+                    <HStack gap={2} flexWrap="wrap">
+                      {trace.has_pdf && <Badge colorScheme="green" fontSize="xs" borderRadius="full">PDF</Badge>}
+                      {trace.conversion_failed && <Badge colorScheme="red" fontSize="xs" borderRadius="full">Failed</Badge>}
+                      {trace.pptx_base64 && !trace.has_pdf && !trace.conversion_failed && (
+                        <Badge colorScheme="orange" fontSize="xs" borderRadius="full">PPTX Only</Badge>
+                      )}
+                      {!trace.pptx_base64 && trace.error && (
+                        <Badge colorScheme="red" fontSize="xs" borderRadius="full">No PPTX</Badge>
+                      )}
+                    </HStack>
+                  </VStack>
+                </Card.Body>
+              </Card.Root>
             ))}
-          </ul>
-        </aside>
+          </VStack>
+        </Box>
 
-        <main className="viewer">
+        {/* Steps Panel - Accordion */}
+        <Box w="400px" bg="white" borderRightWidth="2px" borderColor="brand.200" overflowY="auto" shadow="inner">
           {selectedTrace ? (
-            <>
-              <div className="viewer-header">
-                <h2>{selectedTrace.trace_name}</h2>
-                <div className="viewer-actions">
-                  {selectedTrace.pptx_base64 && (
-                    <button
-                      onClick={() =>
-                        downloadPptx(
-                          selectedTrace.pptx_base64!,
-                          `${selectedTrace.trace_name}.pptx`
-                        )
-                      }
-                    >
-                      Download PPTX
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="slide-container">
-                {selectedTrace.has_pdf ? (
-                  <SlidePdfViewer
-                    pdfUrl={`/api/traces/${selectedTrace.trace_id}/slides.pdf`}
-                  />
-                ) : selectedTrace.pptx_base64 ? (
-                  <div className="no-embed error-state">
-                    <h3>PDF Conversion Not Available</h3>
-                    <p>
-                      LibreOffice is not installed. Install LibreOffice to view slides as PDF.
-                    </p>
-                    <p style={{ marginTop: "1rem", fontSize: "0.9rem", opacity: 0.8 }}>
-                      You can still download the PPTX file using the button above.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="no-embed error-state">
-                    <h3>No Presentation Found</h3>
-                    <p>
-                      {selectedTrace.error ||
-                        "This trace does not contain PPTX output."}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </>
+            <TraceStepsPanel runs={selectedTrace.runs} />
           ) : (
-            <div className="no-selection">
-              <p>Select a trace to view its presentation</p>
-            </div>
+            <Box p={6} textAlign="center">
+              <Text color="gray.500">Select a trace to view steps</Text>
+            </Box>
           )}
-        </main>
-      </div>
-    </div>
+        </Box>
+
+        {/* Main Viewer */}
+        <Box flex="1" p={6} bg="blue.50">
+          {selectedTrace ? (
+            <VStack gap={4} h="full" align="stretch">
+              <Heading size="lg" mb={2}>{selectedTrace.trace_name}</Heading>
+              
+              {/* Download Button - Moved above PDF viewer */}
+              {selectedTrace.pptx_base64 && (
+                <Button
+                  colorScheme="cyan"
+                  size="lg"
+                  shadow="lg"
+                  borderRadius="xl"
+                  _hover={{ shadow: "xl", transform: "translateY(-2px)" }}
+                  onClick={() =>
+                    downloadPptx(selectedTrace.pptx_base64!, `${selectedTrace.trace_name}.pptx`)
+                  }
+                >
+                  <HiDownload style={{ marginRight: '8px' }} />
+                  Download PPTX Artifact from Trace
+                </Button>
+              )}
+
+              <Card.Root flex="1" shadow="2xl" bg="white" borderRadius="2xl" borderWidth="2px" borderColor="blue.200">
+                <Card.Body p={0} h="full" borderRadius="2xl" overflow="hidden">
+                  {selectedTrace.has_pdf ? (
+                    <SlidePdfViewer pdfUrl={`/api/traces/${selectedTrace.trace_id}/slides.pdf`} />
+                  ) : selectedTrace.conversion_failed ? (
+                    <Flex align="center" justify="center" h="full">
+                      <Box bg="red.50" p={8} borderRadius="2xl" borderWidth="2px" borderColor="red.300" maxW="md" shadow="xl">
+                        <Heading size="md" color="red.700" mb={3} fontWeight="bold">Conversion Failed</Heading>
+                        <Text color="red.600" fontSize="sm">
+                          This file may be corrupt or in an unsupported format.
+                        </Text>
+                      </Box>
+                    </Flex>
+                  ) : selectedTrace.pptx_base64 ? (
+                    <Flex align="center" justify="center" h="full">
+                      <Box bg="orange.50" p={8} borderRadius="2xl" borderWidth="2px" borderColor="orange.300" maxW="md" shadow="xl">
+                        <Heading size="md" color="orange.700" mb={3} fontWeight="bold">PDF Conversion Not Available</Heading>
+                        <Text color="orange.700" fontSize="sm">
+                          LibreOffice is not installed. You can download the PPTX file above.
+                        </Text>
+                      </Box>
+                    </Flex>
+                  ) : (
+                    <Flex align="center" justify="center" h="full">
+                      <Box bg="red.50" p={8} borderRadius="2xl" borderWidth="2px" borderColor="red.300" maxW="md" shadow="xl">
+                        <Heading size="md" color="red.700" mb={3} fontWeight="bold">No Presentation Found</Heading>
+                        <Text color="red.600" fontSize="sm">
+                          {selectedTrace.error || "This trace does not contain PPTX output."}
+                        </Text>
+                      </Box>
+                    </Flex>
+                  )}
+                </Card.Body>
+              </Card.Root>
+            </VStack>
+          ) : (
+            <Flex align="center" justify="center" h="full">
+              <VStack gap={4}>
+                <Heading size="xl" color="blue.600" fontWeight="bold">
+                  Select a trace
+                </Heading>
+                <Text color="gray.600" fontSize="lg">Choose a trace from the sidebar to view its presentation</Text>
+              </VStack>
+            </Flex>
+          )}
+        </Box>
+      </Flex>
+    </Box>
   );
 }
 
