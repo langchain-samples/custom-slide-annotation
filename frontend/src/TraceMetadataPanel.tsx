@@ -59,15 +59,16 @@ export default function TraceMetadataPanel({
               style={{ textDecoration: 'none' }}
             >
               <Button
-                size="md"
+                size="sm"
                 colorScheme="brand"
                 variant="outline"
                 borderRadius="lg"
                 fontWeight="600"
+                px={3}
                 _hover={{ bg: "brand.50", transform: "translateY(-1px)" }}
                 transition="all 0.2s"
               >
-                <HiExternalLink style={{ marginRight: '6px' }} />
+                <HiExternalLink style={{ marginRight: '4px', fontSize: '14px' }} />
                 Open in LangSmith
               </Button>
             </a>

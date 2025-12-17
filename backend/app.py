@@ -18,7 +18,7 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from langsmith import Client
 
 
@@ -146,8 +146,17 @@ class FeedbackSubmission(BaseModel):
     trace_id: str
     feedback_type: str  # "trace" or "slide"
     content: str
+    score: int  # 1-5 rating
     slide_number: Optional[int] = None
     timestamp: Optional[str] = None
+    
+    # Validate score is 1-5
+    @field_validator('score')
+    @classmethod
+    def validate_score(cls, v: int) -> int:
+        if not 1 <= v <= 5:
+            raise ValueError('Score must be between 1 and 5')
+        return v
 
 
 class FeedbackResponse(BaseModel):
@@ -234,8 +243,12 @@ async def get_recent_traces():
             
             # Build LangSmith URL
             langsmith_org = os.getenv("LANGSMITH_ORG", "")
-            langsmith_project = os.getenv("LANGSMITH_PROJECT", "default")
-            langsmith_url = f"https://smith.langchain.com/o/{langsmith_org}/projects/p/{langsmith_project}/r/{trace_id}" if langsmith_org else None
+            langsmith_project_id = os.getenv("LANGSMITH_PROJECT_ID", "")
+            
+            if langsmith_org and langsmith_project_id:
+                langsmith_url = f"https://smith.langchain.com/o/{langsmith_org}/projects/p/{langsmith_project_id}?peek={trace_id}&peeked_trace={trace_id}"
+            else:
+                langsmith_url = None
             
             trace_slide = TraceSlide(
                 trace_id=trace_id,
@@ -332,19 +345,40 @@ async def get_trace_pdf(trace_id: str):
 
 @app.post("/api/feedback", response_model=FeedbackResponse)
 async def submit_feedback(submission: FeedbackSubmission):
-    """Store feedback about traces or specific slides."""
+    """Store feedback and attach to LangSmith trace."""
     try:
         submission.timestamp = datetime.utcnow().isoformat()
         feedback_storage.append(submission)
         
-        # Optional: Also send to LangSmith as annotation
-        # ls_client.create_feedback(...)
-        
-        print(f"Received feedback for trace {submission.trace_id}: {submission.content[:50]}...")
+        # Attach feedback to LangSmith trace
+        try:
+            # Determine feedback key based on type
+            if submission.feedback_type == "trace":
+                key = "pptx_layout_quality"
+                comment = f"PPTX Layout Score: {submission.score}/5\n\n{submission.content}"
+            else:  # slide feedback
+                key = f"slide_{submission.slide_number}_communication"
+                comment = f"Slide {submission.slide_number} - Data Communication Score: {submission.score}/5\n\n{submission.content}"
+            
+            # Create feedback in LangSmith
+            ls_client.create_feedback(
+                run_id=submission.trace_id,
+                key=key,
+                score=submission.score / 5.0,  # Normalize to 0-1
+                value=submission.score,
+                comment=comment,
+                feedback_source_type="api"  # Valid options: "api", "model"
+            )
+            
+            print(f"✅ Attached feedback to LangSmith trace {submission.trace_id}")
+            
+        except Exception as e:
+            print(f"⚠️ Failed to attach to LangSmith: {e}")
+            # Continue even if LangSmith attachment fails
         
         return FeedbackResponse(
             success=True,
-            message="Feedback submitted successfully"
+            message="Feedback submitted and attached to trace"
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
