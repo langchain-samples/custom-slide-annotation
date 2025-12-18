@@ -121,8 +121,7 @@ function App() {
   if (viewMode === "chat" && selectedTrace) {
     return (
       <ChatPlayground
-        traceId={selectedTrace.trace_id}
-        traceName={selectedTrace.trace_name}
+        trace={selectedTrace}
         onBack={closeChat}
       />
     );

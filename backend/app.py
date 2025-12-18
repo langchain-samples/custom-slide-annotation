@@ -192,8 +192,8 @@ feedback_storage: list[FeedbackSubmission] = []
 # API ENDPOINTS
 # ============================================================================
 
-def format_io_summary(data: dict, max_length: int = 200) -> str:
-    """Format inputs/outputs as truncated JSON string"""
+def format_io_summary(data: dict, max_length: int = 50000) -> str:
+    """Format inputs/outputs as JSON string (with large limit for message history)"""
     import json
     try:
         text = json.dumps(data, indent=0)
