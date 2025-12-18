@@ -17,6 +17,7 @@ This application demos LangSmith trace monitoring and human evaluation of genera
 - **Quantitative Scoring**: 1-5 rating system for systematic evaluation and analytics
 - **LangSmith Integration**: Feedback automatically attached to traces via LangSmith API for downstream analysis
 - **Trace Visualization**: Deep inspection of agent runs, including inputs/outputs, timing, and execution flow
+- **Agent Playground**: Chat view of the entire trace to-date with preserved thread to continue the conversation with the agent
 - **Artifact Management**: PPTX-to-PDF conversion for reliable cross-platform viewing and downloadable artifacts
 
 ## The Agent: Financial Slide Deck Generator
@@ -120,8 +121,8 @@ All feedback is automatically attached to the source trace via the LangSmith API
 ## Agent Playground
 
 Click **"Open in Chat"** on any trace to enter an interactive playground where you can regenerate slides with different requirements:
-<img width="2131" height="1340" alt="Screenshot 2025-12-18 at 11 40 26 AM" src="https://github.com/user-attachments/assets/e8e2649a-a280-4233-9c68-b3eaf8b62502" />
 <img width="2103" height="1275" alt="Screenshot 2025-12-18 at 11 29 56 AM" src="https://github.com/user-attachments/assets/a7e9f8fb-e8d1-4138-ab87-006d651b3cfe" />
+<img width="2131" height="1340" alt="Screenshot 2025-12-18 at 11 40 26 AM" src="https://github.com/user-attachments/assets/e8e2649a-a280-4233-9c68-b3eaf8b62502" />
 
 
 - **Conversational Interface**: Chat with the agent to modify presentations
