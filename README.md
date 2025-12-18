@@ -120,6 +120,8 @@ All feedback is automatically attached to the source trace via the LangSmith API
 ## Agent Playground
 
 Click **"Open in Chat"** on any trace to enter an interactive playground where you can regenerate slides with different requirements:
+<img width="720" height="437" alt="image" src="https://github.com/user-attachments/assets/2b1c37c1-8fb5-4c4b-9435-8c36ff5c2f72" />
+<img width="720" height="453" alt="image" src="https://github.com/user-attachments/assets/5b0da2cd-0122-4ec6-bd8e-85046e14f84c" />
 
 - **Conversational Interface**: Chat with the agent to modify presentations
 - **Data Preservation**: Uses the original data from the trace
